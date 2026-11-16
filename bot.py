@@ -1,36 +1,32 @@
 import os
 import time
 import threading
-from flask import Flask
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-# Initialize Flask web server to keep the bot alive on Render
-app = Flask(__name__)
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Hadi's Binance Trading Bot is Live and Running!")
 
-@app.route('/')
-def home():
-    return "Hadi's Binance Trading Bot is Live and Running!"
-
-# Securely retrieve API keys from Render environment variables
-api_key = os.environ.get('BINANCE_API_KEY')
-api_secret = os.environ.get('BINANCE_API_SECRET_KEY')
-
-# Initialize Binance client for Spot trading
-client = Client(api_key, api_secret)
-
-# Trading Strategy Parameters
-PROFIT_TARGET_PERCENT = 2.0   # Target profit percentage to sell
-REBUY_DIP_PERCENT = 2.0       # Dip percentage to buy back
-CHECK_INTERVAL = 60           # Interval in seconds between checks
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
 
 def check_wallet_and_market():
+    api_key = os.environ.get('BINANCE_API_KEY')
+    api_secret = os.environ.get('BINANCE_API_SECRET_KEY')
+    
+    client = Client(api_key, api_secret)
+    
     try:
         print("\n========================================")
         print(" Scanning spot wallet and markets now...")
         print("========================================")
         
-        # Fetch account details and spot balances
         account = client.get_account()
         balances = account['balances']
         
@@ -38,41 +34,34 @@ def check_wallet_and_market():
             currency = asset['asset']
             free_balance = float(asset['free'])
             
-            # Exclude stablecoins and zero balances
             if currency in ['USDT', 'USDC', 'FDUSD'] or free_balance <= 0:
                 continue
                 
             trading_pair = f"{currency}USDT"
             
             try:
-                # Fetch current market price against USDT
                 ticker = client.get_symbol_ticker(symbol=trading_pair)
                 current_price = float(ticker['price'])
-                
                 print(f" Asset: {currency} | Balance: {free_balance} | Current Price: {current_price} USDT")
-                
             except BinanceAPIException:
-                # Some assets might not have a direct USDT trading pair
                 continue
                 
         print("----------------------------------------")
-        
-    except BinanceAPIException as e:
-        print(f" Binance API Error: {e}")
     except Exception as e:
-        print(f" Unexpected Error: {e}")
+        print(f" Binance API Error: {e}")
 
 def background_bot_loop():
-    """Background loop to continuously run the trading strategy."""
     while True:
-        check_wallet_and_market()
-        time.sleep(CHECK_INTERVAL)
+        try:
+            check_wallet_and_market()
+        except Exception as e:
+            print(f" Loop Error: {e}")
+        time.sleep(60)
 
 if __name__ == "__main__":
-    # Start the continuous background trading loop in a separate thread
-    bot_thread = threading.Thread(target=background_bot_loop, daemon=True)
-    bot_thread.start()
-    
-    # Run the web server to keep Render happy
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    print("Web server started successfully.")
+
+    print("Starting Binance Trading Bot loop...")
+    background_bot_loop()
