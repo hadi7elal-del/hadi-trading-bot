@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 from flask import Flask
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
@@ -21,6 +22,7 @@ client = Client(api_key, api_secret)
 # Trading Strategy Parameters
 PROFIT_TARGET_PERCENT = 2.0   # Target profit percentage to sell
 REBUY_DIP_PERCENT = 2.0       # Dip percentage to buy back
+CHECK_INTERVAL = 60           # Interval in seconds between checks
 
 def check_wallet_and_market():
     try:
@@ -60,11 +62,17 @@ def check_wallet_and_market():
     except Exception as e:
         print(f" Unexpected Error: {e}")
 
+def background_bot_loop():
+    """Background loop to continuously run the trading strategy."""
+    while True:
+        check_wallet_and_market()
+        time.sleep(CHECK_INTERVAL)
+
 if __name__ == "__main__":
+    # Start the continuous background trading loop in a separate thread
+    bot_thread = threading.Thread(target=background_bot_loop, daemon=True)
+    bot_thread.start()
+    
+    # Run the web server to keep Render happy
     port = int(os.environ.get("PORT", 10000))
-    
-    # Run initial scan on startup
-    check_wallet_and_market()
-    
-    # Run the web server to keep the bot alive
     app.run(host='0.0.0.0', port=port)
