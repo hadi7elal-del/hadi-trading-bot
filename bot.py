@@ -9,7 +9,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Hadi's All-in-One Trading Bot is Live and Executing!")
+        self.wfile.write(b"Hadi's Integrated Trading Bot is Live and Executing!")
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
@@ -59,35 +59,26 @@ def bot_trading_loop():
     
     client = Client(api_key, api_secret)
     
+    target_symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
+    
     while True:
         try:
             print("\n========================================")
-            print(" Scanning wallet assets and markets...")
+            print(" Scanning target markets...")
             print("========================================")
             
-            account = client.get_account()
-            balances = account['balances']
-            
-            for asset in balances:
-                currency = asset['asset']
-                free_balance = float(asset['free'])
-                
-                if currency in ['USDT', 'USDC', 'FDUSD'] or free_balance <= 0:
-                    continue
-                    
-                trading_pair = f"{currency}USDT"
-                
-                action, price = analyze_market_and_decide(client, symbol=trading_pair)
-                print(f" Asset: {currency} | Signal: {action} | Price: {price}")
+            for symbol in target_symbols:
+                action, price = analyze_market_and_decide(client, symbol=symbol)
+                print(f" Asset: {symbol} | Signal: {action} | Price: {price}")
                 
                 if action == "BUY":
-                    print(f" BUY signal triggered for {trading_pair}!")
-                    # execute_trade_order(client, trading_pair, 'BUY', quantity=1.0)
+                    print(f" BUY signal triggered for {symbol}!")
+                    # execute_trade_order(client, symbol, 'BUY', quantity=10.0)
                 elif action == "SELL":
-                    print(f" SELL signal triggered for {trading_pair}!")
-                    # execute_trade_order(client, trading_pair, 'SELL', quantity=1.0)
+                    print(f" SELL signal triggered for {symbol}!")
+                    # execute_trade_order(client, symbol, 'SELL', quantity=10.0)
                 
-                time.sleep(2)
+                time.sleep(5)
                     
             print("----------------------------------------")
         except Exception as e:
@@ -100,5 +91,5 @@ if __name__ == "__main__":
     server_thread.start()
     print("Web server started successfully.")
 
-    print("Starting All-in-One Trading Bot loop...")
+    print("Starting Integrated Trading Bot loop...")
     bot_trading_loop()
