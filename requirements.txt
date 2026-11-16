@@ -1,0 +1,6 @@
+python-binance
+requests
+urllib3
+websockets
+pandas
+numpy
