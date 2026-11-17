@@ -1,4 +1,3 @@
-import os
 import time
 import logging
 import ccxt
@@ -12,27 +11,17 @@ logging.basicConfig(
 )
 
 def main():
-    api_key = os.getenv('BINANCE_API_KEY')
-    secret_key = os.getenv('BINANCE_SECRET_KEY')
-
-    if not api_key or not secret_key:
-        logging.error("API keys missing in environment variables!")
-        return
-
     exchange = ccxt.binance({
-        'apiKey': api_key,
-        'secret': secret_key,
         'enableRateLimit': True,
         'urls': {
             'api': {
                 'public': 'https://testnet.binance.vision/api/v3',
-                'private': 'https://testnet.binance.vision/api/v3',
             }
         }
     })
     
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
-    logging.info(f"Starting trading bot for symbols: {symbols}")
+    logging.info(f"Starting public market data bot for symbols: {symbols}")
 
     while True:
         try:
