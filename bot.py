@@ -25,7 +25,7 @@ def main():
         'enableRateLimit': True,
     })
 
-    # تعيين وضع الـ Sandbox وتعديل الurls لتجنب أخطاء الاتصال الجغرافي
+    # Enable sandbox mode for Testnet operations
     exchange.set_sandbox_mode(True)
     
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
