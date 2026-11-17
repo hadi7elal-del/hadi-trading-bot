@@ -11,10 +11,17 @@ def run_trading_bot():
         print("API keys are missing! Please check environment variables.")
         return
 
-    client = Client(api_key, api_secret)
+    # Initialize Binance Client safely with timeout and connection options
+    try:
+        client = Client(api_key, api_secret, {"timeout": 20})
+        print("Hadi Trading Bot connected to Binance successfully.")
+    except Exception as e:
+        print(f"Failed to initialize Binance client: {e}")
+        return
+
     symbols = ["XRPUSDT", "DOGEUSDT", "UNIUSDT"]
     
-    print("Hadi Trading Bot started safely with rate-limit protection.")
+    print("Starting main trading loop...")
     
     while True:
         try:
