@@ -1,6 +1,6 @@
 import time
 import logging
-import ccxt
+import requests
 
 logging.basicConfig(
     level=logging.INFO,
@@ -11,29 +11,25 @@ logging.basicConfig(
 )
 
 def main():
-    exchange = ccxt.binance({
-        'enableRateLimit': True,
-        'urls': {
-            'api': {
-                'public': 'https://testnet.binance.vision/api/v3',
-            }
-        }
-    })
-    
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
-    logging.info(f"Starting public market data bot for symbols: {symbols}")
+    logging.info(f"Starting direct HTTP price fetcher for symbols: {symbols}")
 
     while True:
         try:
             for symbol in symbols:
-                ticker = exchange.fetch_ticker(symbol)
-                last_price = ticker['last']
-                logging.info(f"Symbol: {symbol} | Current Price: {last_price}")
+                url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+                response = requests.get(url, timeout=10)
+                data = response.json()
                 
-            time.sleep(90)
+                if 'price' in data:
+                    logging.info(f"Symbol: {symbol} | Current Price: {data['price']}")
+                else:
+                    logging.warning(f"Could not fetch price for {symbol}: {data}")
+                
+            time.sleep(60)
 
         except Exception as e:
-            logging.error(f"An error occurred while fetching market data: {e}")
+            logging.error(f"An error occurred while fetching data: {e}")
             time.sleep(30)
 
 if __name__ == "__main__":
