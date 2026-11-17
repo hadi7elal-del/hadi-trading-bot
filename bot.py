@@ -10,7 +10,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from binance.client import Client
 from strategy import check_sma_strategy
 
-# Dummy HTTP server to satisfy Render's requirement for Web Services to bind a port
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -21,7 +20,7 @@ def run_dummy_server():
     port = int(os.getenv("PORT", 10000))
     server_address = ('0.0.0.0', port)
     httpd = HTTPServer(server_address, DummyHandler)
-    print(f"Dummy HTTP server started on port {port}")
+    print(f"Dummy HTTP server started on port {port}", flush=True)
     httpd.serve_forever()
 
 def run_trading_bot():
@@ -29,44 +28,41 @@ def run_trading_bot():
     api_secret = os.getenv("BINANCE_API_SECRET_KEY")
     
     if not api_key or not api_secret:
-        print("API keys are missing! Please check environment variables.")
+        print("API keys are missing! Please check environment variables.", flush=True)
         return
 
     client = None
     
-    # Try initializing the client safely with a loop to handle temporary bans smoothly
     while client is None:
         try:
-            print("Attempting to connect to Binance safely...")
+            print("Attempting to connect to Binance safely...", flush=True)
             client = Client(api_key, api_secret, {"timeout": 30})
-            print("Binance client connected successfully.")
+            print("Binance client connected successfully.", flush=True)
         except Exception as e:
-            print(f"Initialization paused due to rate limit/ban: {e}")
-            print("Waiting 60 seconds before retrying client initialization...")
-            time.sleep(60)
+            print(f"Initialization paused due to rate limit/ban: {e}", flush=True)
+            print("Waiting 90 seconds before retrying client initialization...", flush=True)
+            time.sleep(90)
 
     symbols = ["XRPUSDT", "DOGEUSDT", "UNIUSDT"]
     
-    print("Hadi Trading Bot entering main loop...")
+    print("Hadi Trading Bot entering main loop...", flush=True)
     
     while True:
         try:
-            print("\n--- Starting new market check cycle ---")
+            print("\n--- Starting new market check cycle ---", flush=True)
             for symbol in symbols:
                 check_sma_strategy(client, symbol)
-                time.sleep(10)
+                # Increased buffer to 15 seconds between symbols to completely prevent IP rate limits (-1003)
+                time.sleep(15)
             
-            print("Cycle completed. Waiting 180 seconds before next check...")
-            time.sleep(180)
+            print("Cycle completed. Waiting 300 seconds (5 minutes) before next check...", flush=True)
+            time.sleep(300)
             
         except Exception as e:
-            print(f"An error occurred in main loop: {e}")
+            print(f"An error occurred in main loop: {e}", flush=True)
             time.sleep(60)
 
 if __name__ == "__main__":
-    # Start the dummy HTTP server in a background thread to keep Render happy
     server_thread = threading.Thread(target=run_dummy_server, daemon=True)
     server_thread.start()
-    
-    # Run the main trading bot loop
     run_trading_bot()
