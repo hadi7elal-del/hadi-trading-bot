@@ -37,6 +37,20 @@ def analyze_market_and_decide(client, symbol):
         print(f"[Strategy] Analysis Error for {symbol}: {e}")
         return "HOLD", 0.0
 
+def execute_trade_order(client, symbol, side, quantity=1.0):
+    try:
+        order = client.create_order(
+            symbol=symbol,
+            side=side,
+            type=Client.ORDER_TYPE_MARKET,
+            quantity=quantity
+        )
+        print(f"[Trade] Successfully executed {side} for {symbol}: {order}")
+    except BinanceAPIException as e:
+        print(f"[Trade] Binance API Error for {symbol}: {e}")
+    except Exception as e:
+        print(f"[Trade] Error for {symbol}: {e}")
+
 def bot_trading_loop():
     print("Waiting 20 seconds for network stabilization...")
     time.sleep(20)
@@ -64,8 +78,10 @@ def bot_trading_loop():
                 
                 if action == "BUY":
                     print(f" BUY signal triggered for {symbol}")
+                    execute_trade_order(client, symbol, 'BUY')
                 elif action == "SELL":
                     print(f" SELL signal triggered for {symbol}")
+                    execute_trade_order(client, symbol, 'SELL')
                     
                 time.sleep(5)
                 
