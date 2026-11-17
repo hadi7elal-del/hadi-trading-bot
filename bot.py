@@ -92,10 +92,19 @@ def main():
                         if usdt_balance >= effective_buy_amount:
                             amount_to_buy = effective_buy_amount / current_price
                             order = exchange.create_market_buy_order(symbol, amount_to_buy)
-                            logging.info(f"[{symbol}] BUY order executed successfully: {order['id']}")
+                            logging.info(f"[{symbol}]$ BUY order executed successfully: {order['id']}")
                             reference_prices[symbol] = current_price
                         else:
                             logging.warning(f"[{symbol}] Insufficient USDT balance for dip accumulation.")
 
                 except Exception as inner_e:
-                    logging.
+                    logging.error(f"Error processing symbol {symbol}: {inner_e}")
+
+            time.sleep(60)
+
+        except Exception as e:
+            logging.error(f"An error occurred in main loop: {e}")
+            time.sleep(30)
+
+if __name__ == "__main__":
+    main()
