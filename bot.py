@@ -12,8 +12,8 @@ logging.basicConfig(
 )
 
 def main():
-    api_key = os.getenv('BINANCE_API_KEY')
-    api_secret = os.getenv('BINANCE_API_SECRET')
+    api_key = os.getenv('BINANCE_API_KEY') or os.getenv('API_KEY')
+    api_secret = os.getenv('BINANCE_API_SECRET') or os.getenv('API_SECRET')
     
     if not api_key or not api_secret:
         logging.error("Binance API credentials not found in environment variables!")
@@ -26,63 +26,84 @@ def main():
         'options': {'defaultType': 'spot'}
     })
 
-    symbol = 'XRP/USDT'
     base_trade_amount = 15     
     profit_target_pct = 1.5    
     dip_trigger_pct = 2.0      
     
-    logging.info(f"Starting deep dip accumulation and profit-taking bot for {symbol}...")
+    logging.info("Starting Dynamic Multi-Asset Portfolio Bot...")
     
-    ticker = exchange.fetch_ticker(symbol)
-    reference_price = ticker['last']
-    logging.info(f"Initial Reference Price set to: {reference_price}")
+    reference_prices = {}
 
     while True:
         try:
-            ticker = exchange.fetch_ticker(symbol)
-            current_price = ticker['last']
+            balance = exchange.fetch_free_balance()
             
-            price_change = ((current_price - reference_price) / reference_price) * 100
-            logging.info(f"Current Price: {current_price} | Ref Price: {reference_price} | Change: {price_change:.2f}%")
+            active_coins = []
+            for coin, amt in balance.items():
+                if amt > 0 and coin not in ['USDT', 'FDUSD']:
+                    symbol = f"{coin}/USDT"
+                    try:
+                        exchange.load_markets()
+                        if symbol in exchange.markets:
+                            active_coins.append(symbol)
+                    except Exception:
+                        pass
 
-            if price_change >= profit_target_pct:
-                logging.info(f"Price surged by {price_change:.2f}%. Executing SELL order to collect USDT...")
-                
-                balance = exchange.fetch_free_balance()
-                base_currency = symbol.split('/')[0]
-                coin_balance = balance.get(base_currency, 0)
-                
-                if coin_balance * current_price >= 10:
-                    # order = exchange.create_market_sell_order(symbol, coin_balance)
-                    # logging.info(f"SELL order executed successfully: {order['id']}")
-                    reference_price = current_price
-                else:
-                    logging.warning(f"Insufficient {base_currency} balance for selling.")
+            if not active_coins:
+                logging.warning("No active trading coins with positive balance found. Retrying in 60 seconds...")
+                time.sleep(60)
+                continue
 
-            elif price_change <= -dip_trigger_pct:
-                logging.info(f"Deep dip detected ({price_change:.2f}%). Executing aggressive BUY/ACCUMULATION order...")
-                
-                balance = exchange.fetch_free_balance()
-                usdt_balance = balance.get('USDT', 0)
-                
-                multiplier = abs(int(price_change / dip_trigger_pct))
-                effective_buy_amount = base_trade_amount * max(1, multiplier)
-                
-                if usdt_balance >= effective_buy_amount:
-                    amount_to_buy = effective_buy_amount / current_price
-                    # order = exchange.create_market_buy_order(symbol, amount_to_buy)
-                    # logging.info(f"ACCUMULATION BUY order executed: {order['id']}")
-                    reference_price = current_price
-                else:
-                    logging.warning("Insufficient USDT balance for deep dip accumulation.")
+            logging.info(f"Monitoring active portfolio coins: {active_coins}")
 
-            else:
-                logging.info("Market stabilizing, waiting for significant movement...")
+            for symbol in active_coins:
+                try:
+                    ticker = exchange.fetch_ticker(symbol)
+                    current_price = ticker['last']
+                    
+                    if symbol not in reference_prices:
+                        reference_prices[symbol] = current_price
+                        logging.info(f"[{symbol}] Initial Reference Price set to: {current_price}")
+                        continue
+                    
+                    ref_price = reference_prices[symbol]
+                    price_change = ((current_price - ref_price) / ref_price) * 100
+                    logging.info(f"[{symbol}] Current: {current_price} | Ref: {ref_price} | Change: {price_change:.2f}%")
+
+                    base_currency = symbol.split('/')[0]
+                    coin_balance = balance.get(base_currency, 0)
+
+                    if price_change >= profit_target_pct:
+                        logging.info(f"[{symbol}] Price surged by {price_change:.2f}%. Executing SELL order...")
+                        if coin_balance * current_price >= 10:
+                            # order = exchange.create_market_sell_order(symbol, coin_balance)
+                            # logging.info(f"[{symbol}] SELL order executed: {order['id']}")
+                            reference_prices[symbol] = current_price
+                        else:
+                            logging.warning(f"[{symbol}] Insufficient balance for selling.")
+
+                    elif price_change <= -dip_trigger_pct:
+                        logging.info(f"[{symbol}] Deep dip detected ({price_change:.2f}%). Executing BUY order...")
+                        usdt_balance = balance.get('USDT', 0)
+                        
+                        multiplier = abs(int(price_change / dip_trigger_pct))
+                        effective_buy_amount = base_trade_amount * max(1, multiplier)
+                        
+                        if usdt_balance >= effective_buy_amount:
+                            amount_to_buy = effective_buy_amount / current_price
+                            # order = exchange.create_market_buy_order(symbol, amount_to_buy)
+                            # logging.info(f"[{symbol}] BUY order executed: {order['id']}")
+                            reference_prices[symbol] = current_price
+                        else:
+                            logging.warning(f"[{symbol}] Insufficient USDT balance for dip accumulation.")
+
+                except Exception as inner_e:
+                    logging.error(f"Error processing symbol {symbol}: {inner_e}")
 
             time.sleep(60)
 
         except Exception as e:
-            logging.error(f"An error occurred in trading loop: {e}")
+            logging.error(f"An error occurred in main loop: {e}")
             time.sleep(30)
 
 if __name__ == "__main__":
