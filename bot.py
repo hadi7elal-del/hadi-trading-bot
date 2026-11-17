@@ -25,12 +25,9 @@ def main():
         'enableRateLimit': True,
     })
 
-    try:
-        exchange.set_sandbox_mode(True)
-        logging.info("Sandbox mode enabled successfully.")
-    except Exception as e:
-        logging.warning(f"Sandbox mode warning: {e}")
-
+    # تعيين وضع الـ Sandbox وتعديل الurls لتجنب أخطاء الاتصال الجغرافي
+    exchange.set_sandbox_mode(True)
+    
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
     logging.info(f"Starting trading bot for symbols: {symbols}")
 
