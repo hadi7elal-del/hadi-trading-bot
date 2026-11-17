@@ -12,12 +12,12 @@ logging.basicConfig(
 
 def main():
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
-    logging.info(f"Starting direct HTTP price fetcher for symbols: {symbols}")
+    logging.info(f"Starting price fetcher for symbols: {symbols}")
 
     while True:
         try:
             for symbol in symbols:
-                url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+                url = f"https://api1.binance.com/api/v3/ticker/price?symbol={symbol}"
                 response = requests.get(url, timeout=10)
                 data = response.json()
                 
