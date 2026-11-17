@@ -1,8 +1,5 @@
 import os
 import time
-
-time.sleep(15)
-
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from binance.client import Client
@@ -40,21 +37,10 @@ def analyze_market_and_decide(client, symbol):
         print(f"[Strategy] Analysis Error for {symbol}: {e}")
         return "HOLD", 0.0
 
-def execute_trade_order(client, symbol, side, quantity=1.0):
-    try:
-        order = client.create_order(
-            symbol=symbol,
-            side=side,
-            type=Client.ORDER_TYPE_MARKET,
-            quantity=quantity
-        )
-        print(f"[Trade] Successfully executed {side} for {symbol}: {order}")
-    except BinanceAPIException as e:
-        print(f"[Trade] Binance API Error for {symbol}: {e}")
-    except Exception as e:
-        print(f"[Trade] Error for {symbol}: {e}")
-
 def bot_trading_loop():
+    print("Waiting 20 seconds for network stabilization...")
+    time.sleep(20)
+
     api_key = os.environ.get('BINANCE_API_KEY')
     api_secret = os.environ.get('BINANCE_API_SECRET_KEY')
     
@@ -62,7 +48,7 @@ def bot_trading_loop():
         print("[Error] API keys not found in environment variables!")
         return
 
-    client = Client(api_key, api_secret)
+    client = Client(api_key, api_secret, {"verify": True, "timeout": 20})
     
     target_symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
     
@@ -78,10 +64,8 @@ def bot_trading_loop():
                 
                 if action == "BUY":
                     print(f" BUY signal triggered for {symbol}")
-                    # execute_trade_order(client, symbol, 'BUY')
                 elif action == "SELL":
                     print(f" SELL signal triggered for {symbol}")
-                    # execute_trade_order(client, symbol, 'SELL')
                     
                 time.sleep(5)
                 
