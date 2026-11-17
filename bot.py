@@ -1,4 +1,9 @@
+import sys
 import os
+
+# Force Python to flush stdout immediately so logs appear instantly on Render
+sys.stdout.reconfigure(line_buffering=True)
+
 import time
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
