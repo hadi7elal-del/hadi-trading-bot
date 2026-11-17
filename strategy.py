@@ -29,6 +29,5 @@ def check_sma_strategy(client, symbol):
         
     except Exception as e:
         print(f"Error fetching data for {symbol}: {e}")
-        # Sleep longer if an error occurs to let the IP ban lift
         time.sleep(10)
         return None
