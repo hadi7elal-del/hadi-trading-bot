@@ -23,10 +23,13 @@ def main():
         'apiKey': api_key,
         'secret': secret_key,
         'enableRateLimit': True,
+        'urls': {
+            'api': {
+                'public': 'https://testnet.binance.vision/api/v3',
+                'private': 'https://testnet.binance.vision/api/v3',
+            }
+        }
     })
-
-    # Enable sandbox mode for Testnet operations
-    exchange.set_sandbox_mode(True)
     
     symbols = ['XRPUSDT', 'DOGEUSDT', 'UNIUSDT']
     logging.info(f"Starting trading bot for symbols: {symbols}")
