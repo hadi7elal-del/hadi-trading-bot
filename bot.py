@@ -30,7 +30,7 @@ def main():
     profit_target_pct = 1.5    
     dip_trigger_pct = 2.0      
     
-    logging.info("Starting Dynamic Multi-Asset Portfolio Bot...")
+    logging.info("Starting Dynamic Multi-Asset Portfolio Bot (Live Execution Mode)...")
     
     reference_prices = {}
 
@@ -76,8 +76,8 @@ def main():
                     if price_change >= profit_target_pct:
                         logging.info(f"[{symbol}] Price surged by {price_change:.2f}%. Executing SELL order...")
                         if coin_balance * current_price >= 10:
-                            # order = exchange.create_market_sell_order(symbol, coin_balance)
-                            # logging.info(f"[{symbol}] SELL order executed: {order['id']}")
+                            order = exchange.create_market_sell_order(symbol, coin_balance)
+                            logging.info(f"[{symbol}] SELL order executed successfully: {order['id']}")
                             reference_prices[symbol] = current_price
                         else:
                             logging.warning(f"[{symbol}] Insufficient balance for selling.")
@@ -91,20 +91,11 @@ def main():
                         
                         if usdt_balance >= effective_buy_amount:
                             amount_to_buy = effective_buy_amount / current_price
-                            # order = exchange.create_market_buy_order(symbol, amount_to_buy)
-                            # logging.info(f"[{symbol}] BUY order executed: {order['id']}")
+                            order = exchange.create_market_buy_order(symbol, amount_to_buy)
+                            logging.info(f"[{symbol}] BUY order executed successfully: {order['id']}")
                             reference_prices[symbol] = current_price
                         else:
                             logging.warning(f"[{symbol}] Insufficient USDT balance for dip accumulation.")
 
                 except Exception as inner_e:
-                    logging.error(f"Error processing symbol {symbol}: {inner_e}")
-
-            time.sleep(60)
-
-        except Exception as e:
-            logging.error(f"An error occurred in main loop: {e}")
-            time.sleep(30)
-
-if __name__ == "__main__":
-    main()
+                    logging.
